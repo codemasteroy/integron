@@ -1,16 +1,19 @@
 module github.com/integronlabs/integron
 
-go 1.24.1
+go 1.25.0
 
 require (
 	github.com/PaesslerAG/jsonpath v0.1.1
+	github.com/coreos/go-oidc/v3 v3.19.0
 	github.com/getkin/kin-openapi v0.128.0
+	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/sirupsen/logrus v1.9.3
 )
 
 require (
 	github.com/PaesslerAG/gval v1.0.0 // indirect
 	github.com/vearutop/statigz v1.4.0 // indirect
+	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 )
 

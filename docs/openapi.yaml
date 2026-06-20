@@ -10,6 +10,26 @@ tags:
     description: Dog Facts
 servers:
   - url: http://localhost:8080
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: http
+      scheme: bearer
+    oidcAuth:
+      type: openIdConnect
+      openIdConnectUrl: https://issuer.example.com/.well-known/openid-configuration
+# To require authentication on an operation, add a `security` block to it, e.g.:
+#   security:
+#     - bearerAuth: []
+#   # or
+#   security:
+#     - basicAuth: []
+#   # JWT validated via OIDC discovery, optionally requiring scopes:
+#   security:
+#     - oidcAuth: [read]
 paths:
     /facts:
       get:

@@ -2,10 +2,12 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/integronlabs/integron/auth"
 	"github.com/integronlabs/integron/helpers"
 	"github.com/sirupsen/logrus"
 )
@@ -81,11 +83,20 @@ func (s *Server) Handler(w http.ResponseWriter, r *http.Request) {
 		Request:    r,
 		PathParams: pathParams,
 		Route:      route,
+		Options: &openapi3filter.Options{
+			AuthenticationFunc: auth.Authenticate,
+		},
 	}
 
-	err = openapi3filter.ValidateRequest(ctx, requestValidationInput)
+	authCtx, claimsSink := auth.WithClaimsSink(ctx)
+	err = openapi3filter.ValidateRequest(authCtx, requestValidationInput)
 
 	if err != nil {
+		var secErr *openapi3filter.SecurityRequirementsError
+		if errors.As(err, &secErr) {
+			Error(r, w, secErr.Error(), http.StatusUnauthorized, "UNAUTHORIZED")
+			return
+		}
 		Error(r, w, err.Error(), http.StatusBadRequest, "BAD_REQUEST")
 		return
 	}
@@ -98,6 +109,9 @@ func (s *Server) Handler(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewDecoder(r.Body).Decode(&input)
 
 	stepOutputs["request"] = input
+	if claims := claimsSink.Claims(); claims != nil {
+		stepOutputs["auth"] = map[string]interface{}(claims)
+	}
 
 	stepsArray, ok := route.PathItem.GetOperation(route.Method).Extensions["x-integron-steps"].([]interface{})
 

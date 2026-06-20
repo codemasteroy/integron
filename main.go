@@ -5,10 +5,12 @@ import (
 	"errors"
 	"flag"
 	"net/http"
+	"os"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/routers/gorillamux"
 	"github.com/integronlabs/integron/array"
+	"github.com/integronlabs/integron/auth"
 	"github.com/integronlabs/integron/helpers"
 	httpOperation "github.com/integronlabs/integron/http"
 	"github.com/integronlabs/integron/object"
@@ -61,6 +63,20 @@ func main() {
 	server.RegisterStep("error", func(ctx context.Context, stepMap map[string]interface{}, stepOutputs map[string]interface{}) (interface{}, string, error) {
 		return nil, "end", errors.New("error step triggered")
 	})
+
+	// Register authentication verifiers keyed by the security scheme names
+	// declared in the OpenAPI spec's components.securitySchemes.
+	auth.RegisterVerifier("basicAuth", auth.StaticBasicVerifier(
+		os.Getenv("INTEGRON_BASIC_USERNAME"),
+		os.Getenv("INTEGRON_BASIC_PASSWORD"),
+	))
+	auth.RegisterVerifier("bearerAuth", auth.StaticBearerVerifier(
+		os.Getenv("INTEGRON_BEARER_TOKEN"),
+	))
+	auth.RegisterVerifier("oidcAuth", auth.OIDCVerifier(auth.OIDCConfig{
+		Issuer:   os.Getenv("INTEGRON_OIDC_ISSUER"),   // optional; else derived from the spec's openIdConnectUrl
+		Audience: os.Getenv("INTEGRON_OIDC_AUDIENCE"), // optional
+	}))
 
 	http.Handle("/", http.HandlerFunc(s.Handler))
 
